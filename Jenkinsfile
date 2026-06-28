@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+    environment {
+        PYTHON_ENV = 'venv'
+    }
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Setting up Python Virtual Environment...'
+                sh '''
+                    python3 -m venv ${PYTHON_ENV}
+                    . ${PYTHON_ENV}/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Running pytest tests...'
+                sh '''
+                    . ${PYTHON_ENV}/bin/activate
+                    pytest tests/ --junitxml=test-reports/results.xml
+                '''
+            }
+            post {
+                always {
+                    // Archive test results to display graphs on Jenkins
+                    junit 'test-reports/results.xml'
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying Flask application to Staging...'
+                sh '''
+                    . ${PYTHON_ENV}/bin/activate
+                    # In a real environment, you would copy files to your server or restart the service
+                    echo "Starting application service in staging..."
+                    # Example mock deployment check:
+                    python -c "import flask; print('Flask is installed and verified!')"
+                    echo "Application deployed successfully to staging!"
+                '''
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+            // To enable real email alerts:
+            // mail to: 'your-email@example.com',
+            //      subject: "SUCCESS: Job '${env.JOB_NAME}' [Build #${env.BUILD_NUMBER}]",
+            //      body: "The build was successful. Check details here: ${env.BUILD_URL}"
+        }
+        failure {
+            echo 'Pipeline failed!'
+            // To enable real email alerts:
+            // mail to: 'your-email@example.com',
+            //      subject: "FAILURE: Job '${env.JOB_NAME}' [Build #${env.BUILD_NUMBER}]",
+            //      body: "The build failed. Check console output here: ${env.BUILD_URL}"
+        }
+    }
+}
