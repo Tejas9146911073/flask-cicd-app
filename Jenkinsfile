@@ -1,4 +1,4 @@
-pipeline {
+python -m pytest tests/ --junitxml=test-reports/results.xmlpipeline {
     agent any
     environment {
         PYTHON_ENV = 'venv'
