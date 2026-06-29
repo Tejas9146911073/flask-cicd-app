@@ -5,7 +5,7 @@ on:
       - main
       - staging
     tags:
-      - 'v*'  # Triggers when a release tag is created (e.g., v1.0.0)
+      - 'v*'
 jobs:
   install-dependencies:
     runs-on: ubuntu-latest
@@ -36,7 +36,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run Pytest
         run: |
-          pytest
+          python -m pytest
   build:
     needs: run-tests
     runs-on: ubuntu-latest
@@ -72,7 +72,6 @@ jobs:
         run: |
           echo "Connecting to staging server..."
           echo "Deploying build artifact to staging at $STAGING_SERVER_IP..."
-          # Mock deployment steps representing safe consumption of secrets
           echo "Staging Deployment Completed Successfully!"
   deploy-to-production:
     needs: build
@@ -90,5 +89,4 @@ jobs:
         run: |
           echo "Connecting to production server..."
           echo "Deploying release ${{ github.ref_name }} to production at $PROD_SERVER_IP..."
-          # Mock production deployment steps representing safe consumption of secrets
           echo "Production Deployment Completed Successfully!"
