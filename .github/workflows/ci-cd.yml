@@ -1,0 +1,94 @@
+name: Flask App CI/CD
+on:
+  push:
+    branches:
+      - main
+      - staging
+    tags:
+      - 'v*'  # Triggers when a release tag is created (e.g., v1.0.0)
+jobs:
+  install-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+  run-tests:
+    needs: install-dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Pytest
+        run: |
+          pytest
+  build:
+    needs: run-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build / Package Application
+        run: |
+          echo "Packaging application for deployment..."
+          tar -czf app.tar.gz app.py requirements.txt
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flask-app-build
+          path: app.tar.gz
+  deploy-to-staging:
+    needs: build
+    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flask-app-build
+      - name: Deploy to Staging Environment
+        env:
+          STAGING_API_TOKEN: ${{ secrets.STAGING_API_TOKEN }}
+          STAGING_SERVER_IP: ${{ secrets.STAGING_SERVER_IP }}
+        run: |
+          echo "Connecting to staging server..."
+          echo "Deploying build artifact to staging at $STAGING_SERVER_IP..."
+          # Mock deployment steps representing safe consumption of secrets
+          echo "Staging Deployment Completed Successfully!"
+  deploy-to-production:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flask-app-build
+      - name: Deploy to Production Environment
+        env:
+          PROD_API_TOKEN: ${{ secrets.PROD_API_TOKEN }}
+          PROD_SERVER_IP: ${{ secrets.PROD_SERVER_IP }}
+        run: |
+          echo "Connecting to production server..."
+          echo "Deploying release ${{ github.ref_name }} to production at $PROD_SERVER_IP..."
+          # Mock production deployment steps representing safe consumption of secrets
+          echo "Production Deployment Completed Successfully!"
